@@ -10,6 +10,11 @@ The resulting behavior should:
 - create a ghost object when dragging an object between snap points
 - highlight snap points when dragging a dependent component
 
+**Bonus:** find a method to serialize the components to:
+
+- be stored in a database
+- run simulations with
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.

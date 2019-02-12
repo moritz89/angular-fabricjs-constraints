@@ -10,6 +10,16 @@ The resulting behavior should:
 - create a ghost object when dragging an object between snap points
 - highlight snap points when dragging a dependent component
 
+To implement this create group types that are added via dependency injection:
+
+- Water Cycle
+- Electrical Grid
+- Data Network
+- Greenhouse
+- Lighting Group
+
+Components (e.g., pipes, pumps, plants) are part of one or more groups that they interact with. This means that pumps would be assigned to a water cycle, electrical grid, data network and greenhouse while a plant would be assigned to a water cycle, greenhouse and lighting group. On creation, each component would register itself with each injected group and remove itself on deletion.
+
 **Bonus:** find a method to serialize the components to:
 
 - be stored in a database

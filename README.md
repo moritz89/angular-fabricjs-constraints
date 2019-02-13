@@ -18,7 +18,10 @@ To implement this create group types that are added via dependency injection:
 - Greenhouse
 - Lighting Group
 
-Components (e.g., pipes, pumps, plants) are part of one or more groups that they interact with. This means that pumps would be assigned to a water cycle, electrical grid, data network and greenhouse while a plant would be assigned to a water cycle, greenhouse and lighting group. On creation, each component would register itself with each injected group and remove itself on deletion.
+Components (e.g., pipes, pumps, plants) are part of one or more groups that they interact with. This
+means that pumps would be assigned to a water cycle, electrical grid, data network and greenhouse
+while a plant would be assigned to a water cycle, greenhouse and lighting group. On creation, each
+component would register itself with each injected group and remove itself on deletion.
 
 **Bonus:** find a method to serialize the components to:
 
@@ -27,4 +30,11 @@ Components (e.g., pipes, pumps, plants) are part of one or more groups that they
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically
+reload if you change any of the source files.
+
+## Memory usage
+
+The memory usage was collected for different usage scenarios to verify that the Javascript memory
+mangement acts as expected. This is to confirm that the chosen model structure will work well with
+Javascript's memory management. The results can be found in the `Memory consumption.ods` file.

@@ -3,11 +3,13 @@ import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { FloorPlannerComponent } from './floor-planner/floor-planner.component';
+import { EcsTestComponent } from './ecs-test/ecs-test.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    FloorPlannerComponent
+    FloorPlannerComponent,
+    EcsTestComponent
   ],
   imports: [
     BrowserModule

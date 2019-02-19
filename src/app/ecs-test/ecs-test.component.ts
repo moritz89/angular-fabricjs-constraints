@@ -25,7 +25,7 @@ class MyScene extends Scene {
 
   load() {
     this.canvas = new fabric.Canvas('canvas');
-    this.canvas.backgroundColor = "gray";
+    this.canvas.backgroundColor = 'white';
     this.canvas.renderAll();
 
     this.world.addManager(this.uiInterface);

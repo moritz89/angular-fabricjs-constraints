@@ -1,18 +1,26 @@
 import { fabric } from 'fabric';
 import { Component, OnInit } from '@angular/core';
-import { Scene, Entity, Complex, Manager } from 'complex-engine';
+import { Scene, Entity, Complex, Manager, EntitySystem } from 'complex-engine';
 
-import { CanvasComponent, CanvasPurpose } from '../models/components/canvas-component';
+import { CanvasComponent } from '../models/components/canvas-component';
 import { WaterCycleComponent } from '../models/components/water-cycle-component';
 import { CanvasSystem } from '../models/systems/canvas-system';
+import { WaterCycleSimulationSystem } from '../models/systems/water-cycle-simulation-system';
+import { WaterCycleBuilderSystem } from '../models/systems/water-cycle-builder-system';
+import { TypeComponent, EntityType } from '../models/components/type-component';
 
 class UiInterface extends Manager {
   constructor() {
     super();
   }
 
-  createPump(): void {
+  public createPump(): void {
     this.getWorld().addEntity(MyScene.createPump());
+  }
+
+  public deleteActiveObject(): void {
+    const canvasSystem = this.getWorld().getSystem(CanvasSystem) as CanvasSystem;
+    canvasSystem.removeActiveObject();
   }
 }
 
@@ -30,12 +38,16 @@ class MyScene extends Scene {
 
     this.world.addManager(this.uiInterface);
     this.world.addSystem(new CanvasSystem(this.canvas));
+    const waterCycleSimulationSystem = new WaterCycleSimulationSystem();
+    this.world.addSystem(waterCycleSimulationSystem);
+    this.world.addSystem(new WaterCycleBuilderSystem(waterCycleSimulationSystem));
     this.world.addEntity(MyScene.createPump());
   }
 
   static createPump(): Entity {
     let pump = new Entity('Pump');
-    pump.addComponent(new CanvasComponent(20, 30, CanvasPurpose.Icon));
+    pump.addComponent(new CanvasComponent(20, 30));
+    pump.addComponent(new TypeComponent(EntityType.Pump));
     pump.addComponent(new WaterCycleComponent(-1, 100, [], [], true));
 
     return pump;
@@ -61,5 +73,9 @@ export class EcsTestComponent implements OnInit {
 
   create() {
     this.uiInterface.createPump();
+  }
+
+  delete() {
+    this.uiInterface.deleteActiveObject();
   }
 }

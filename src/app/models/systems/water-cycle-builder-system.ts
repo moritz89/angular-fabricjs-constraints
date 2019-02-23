@@ -18,10 +18,10 @@ export class WaterCycleBuilderSystem extends EntitySystem {
   }
 
   entitySelected(entity: Entity) {
-    for (let item of this.waterCycleSimulationSystem.waterCycleEntities) {
+    for (const item of this.waterCycleSimulationSystem.waterCycleEntities) {
       if (item !== entity) {
         console.log('updating purpose to activeFamily');
-        let typeComponent = item.getComponents(TypeComponent)[0] as TypeComponent;
+        const typeComponent = item.getComponents(TypeComponent)[0] as TypeComponent;
         typeComponent.purpose = Purpose.ActiveFamily;
       }
     }
@@ -31,11 +31,11 @@ export class WaterCycleBuilderSystem extends EntitySystem {
   }
 
   entityUnselected(entity: Entity) {
-    for (let item of this.waterCycleSimulationSystem.waterCycleEntities) {
+    for (const item of this.waterCycleSimulationSystem.waterCycleEntities) {
       if (item !== entity) {
         console.log('updating purpose to default');
 
-        let typeComponent = item.getComponents(TypeComponent)[0] as TypeComponent;
+        const typeComponent = item.getComponents(TypeComponent)[0] as TypeComponent;
         typeComponent.purpose = Purpose.Default;
       }
     }

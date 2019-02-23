@@ -1,12 +1,13 @@
 import { Entity, EntitySystem } from 'complex-engine';
 import { fabric } from 'fabric';
 
-import { CanvasComponent } from '../components/canvas-component';
-import { TypeComponent, EntityType, Purpose } from '../components/type-component';
 import { bound } from '../../utils/bound';
-import '../../utils/fabric-ecs';
+import { CanvasComponent } from '../components/canvas-component';
 import { SelectedComponent } from '../components/selected-component';
+import { EntityType, Purpose, TypeComponent } from '../components/type-component';
 import { WaterCycleBuilderSystem } from './water-cycle-builder-system';
+import '../../utils/fabric-ecs';
+
 
 const typeToIconUrlMock: Record<string, string> = {
   pump: '/path/to/the/icon.svg'
@@ -25,8 +26,8 @@ export class CanvasSystem extends EntitySystem {
     });
   }
 
-  private gridSpacingX: number = 50;
-  private gridSpacingY: number = 50;
+  private gridSpacingX = 50;
+  private gridSpacingY = 50;
   private typeToIconUrl: Record<string, string> = typeToIconUrlMock;
 
   @bound
@@ -68,18 +69,22 @@ export class CanvasSystem extends EntitySystem {
 
   @bound
   private zoomCanvas(options: any) {
-    var delta = -options.e.deltaY;
-    var zoom = this.canvas.getZoom();
+    const delta = -options.e.deltaY;
+    let zoom = this.canvas.getZoom();
     zoom = zoom + delta / 200;
-    if (zoom > 20) zoom = 20;
-    if (zoom < 0.01) zoom = 0.01;
+    if (zoom > 20) {
+      zoom = 20;
+    }
+    if (zoom < 0.01) {
+      zoom = 0.01;
+    }
     this.canvas.setZoom(zoom);
     options.e.preventDefault();
     options.e.stopPropagation();
   }
 
   public removeActiveObject(): void {
-    let object = this.canvas.getActiveObject();
+    const object = this.canvas.getActiveObject();
     if (object) {
       this.canvas.remove(object);
     }
@@ -94,9 +99,9 @@ export class CanvasSystem extends EntitySystem {
       });
     } else if (option.hasOwnProperty('target')) {
       console.log(option.target);
-      let entity = option.target.ecs_entity as Entity;
+      const entity = option.target.ecs_entity as Entity;
       entity.addComponent(SelectedComponent);
-      let waterCycleBuilderSystem = this.world.getSystem(
+      const waterCycleBuilderSystem = this.world.getSystem(
         WaterCycleBuilderSystem
       ) as WaterCycleBuilderSystem;
       waterCycleBuilderSystem.entitySelected(entity);
@@ -109,10 +114,10 @@ export class CanvasSystem extends EntitySystem {
   }
 
   private getIconUrl(entityType: EntityType, purpose: Purpose = Purpose.Default): string {
-    if (purpose == Purpose.Default) {
+    if (purpose === Purpose.Default) {
       return this.typeToIconUrl[entityType];
     } else {
-      let url = this.typeToIconUrl[entityType];
+      const url = this.typeToIconUrl[entityType];
       return this.addPostfix(url, highlightPostfix);
     }
   }
@@ -127,7 +132,7 @@ export class CanvasSystem extends EntitySystem {
     if (entity.hasComponent(CanvasComponent)) {
       const canvasComponent = entity.getComponents(CanvasComponent)[0] as CanvasComponent;
       if (!canvasComponent.object) {
-        let rect = new fabric.Rect({
+        const rect = new fabric.Rect({
           left: 50,
           top: 50,
           strokeWidth: 0,
@@ -143,25 +148,23 @@ export class CanvasSystem extends EntitySystem {
   }
 
   update(entity: Entity) {
-    let typeComponent = entity.getComponents(TypeComponent)[0] as TypeComponent;
+    const typeComponent = entity.getComponents(TypeComponent)[0] as TypeComponent;
     if (typeComponent.isDirty) {
-      let canvasComponent = entity.getComponents(CanvasComponent)[0] as CanvasComponent;
-      let [left, top] = [canvasComponent.object.left, canvasComponent.object.top];
+      const canvasComponent = entity.getComponents(CanvasComponent)[0] as CanvasComponent;
+      const [left, top] = [canvasComponent.object.left, canvasComponent.object.top];
       canvasComponent.object.set({ left: 0, top: 0 });
       canvasComponent.object.setCoords();
-      let group = new fabric.Group(
+      const group = new fabric.Group(
         [
           canvasComponent.object,
           new fabric.Rect({
             width: canvasComponent.object.width,
             height: canvasComponent.object.height,
+            strokeWidth: 0,
             fill: 'white'
           })
         ],
-        {
-          left: left,
-          top: top
-        }
+        { left, top }
       );
       group.item(1).set('opacity', 0.5);
       this.canvas.add(group);

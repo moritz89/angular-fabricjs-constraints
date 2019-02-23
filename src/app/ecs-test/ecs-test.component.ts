@@ -9,26 +9,20 @@ import { WaterCycleSimulationSystem } from '../models/systems/water-cycle-simula
 import { WaterCycleBuilderSystem } from '../models/systems/water-cycle-builder-system';
 import { TypeComponent, EntityType } from '../models/components/type-component';
 
-class UiInterface extends Manager {
-  constructor() {
-    super();
-  }
-
-  public createPump(): void {
-    this.getWorld().addEntity(MyScene.createPump());
-  }
-
-  public deleteActiveObject(): void {
-    const canvasSystem = this.getWorld().getSystem(CanvasSystem) as CanvasSystem;
-    canvasSystem.removeActiveObject();
-  }
-}
-
 class MyScene extends Scene {
   public canvas: fabric.Canvas;
 
   constructor(private uiInterface: UiInterface) {
     super('MainScene');
+  }
+
+  static createPump(): Entity {
+    const pump = new Entity('Pump');
+    pump.addComponent(new CanvasComponent(20, 30));
+    pump.addComponent(new TypeComponent(EntityType.Pump));
+    pump.addComponent(new WaterCycleComponent(-1, 100, [], [], true));
+
+    return pump;
   }
 
   load() {
@@ -43,14 +37,20 @@ class MyScene extends Scene {
     this.world.addSystem(new WaterCycleBuilderSystem(waterCycleSimulationSystem));
     this.world.addEntity(MyScene.createPump());
   }
+}
 
-  static createPump(): Entity {
-    let pump = new Entity('Pump');
-    pump.addComponent(new CanvasComponent(20, 30));
-    pump.addComponent(new TypeComponent(EntityType.Pump));
-    pump.addComponent(new WaterCycleComponent(-1, 100, [], [], true));
+class UiInterface extends Manager {
+  constructor() {
+    super();
+  }
 
-    return pump;
+  public createPump(): void {
+    this.getWorld().addEntity(MyScene.createPump());
+  }
+
+  public deleteActiveObject(): void {
+    const canvasSystem = this.getWorld().getSystem(CanvasSystem) as CanvasSystem;
+    canvasSystem.removeActiveObject();
   }
 }
 

@@ -1,18 +1,11 @@
 import { Entity, EntitySystem } from 'complex-engine';
 import { fabric } from 'fabric';
+import { Output, EventEmitter } from '@angular/core';
 
 import { bound } from '../../utils/bound';
 import { CanvasComponent } from '../components/canvas-component';
-import { SelectedComponent } from '../components/selected-component';
-import { EntityType, Purpose, TypeComponent } from '../components/type-component';
-import { WaterCycleBuilderSystem } from './water-cycle-builder-system';
+import { Purpose, TypeComponent } from '../components/type-component';
 import '../../utils/fabric-ecs';
-
-
-const typeToIconUrlMock: Record<string, string> = {
-  pump: '/path/to/the/icon.svg'
-};
-const highlightPostfix = '-lighter';
 
 export class CanvasSystem extends EntitySystem {
   constructor(private canvas: fabric.Canvas) {
@@ -22,13 +15,21 @@ export class CanvasSystem extends EntitySystem {
     this.canvas.on({
       'object:moved': this.snapObjectHandler,
       'mouse:wheel': this.zoomCanvas,
-      'selection:created': this.selectionCreatedHandler
+      'selection:created': this.selectionCreatedHandler,
+      'selection:cleared': this.selectionClearedHandler
     });
+
+    this.redrawEntities.subscribe((entities: Entity[]) =>
+      entities.forEach(entity => this.update(entity))
+    );
   }
 
-  private gridSpacingX = 50;
-  private gridSpacingY = 50;
-  private typeToIconUrl: Record<string, string> = typeToIconUrlMock;
+  private gridSpacingX: number = 50;
+  private gridSpacingY: number = 50;
+
+  @Output() entitySelected: EventEmitter<Entity> = new EventEmitter();
+  @Output() entitiesUnselected: EventEmitter<Entity[]> = new EventEmitter();
+  @Output() redrawEntities: EventEmitter<Entity[]> = new EventEmitter();
 
   @bound
   private snapObjectHandler(options: any) {
@@ -84,50 +85,45 @@ export class CanvasSystem extends EntitySystem {
   }
 
   public removeActiveObject(): void {
-    const object = this.canvas.getActiveObject();
-    if (object) {
-      this.canvas.remove(object);
+    let object = this.canvas.getActiveObject();
+    if (object.ecs_entity) {
+      this.removed(object.ecs_entity);
     }
   }
 
   @bound
   private selectionCreatedHandler(option: any) {
     if (option.target.hasOwnProperty('_objects')) {
-      console.log(option.target);
+      // console.log(option.target);
       option.target._objects.forEach(element => {
-        console.log(element);
+        // console.log(element);
       });
     } else if (option.hasOwnProperty('target')) {
-      console.log(option.target);
-      const entity = option.target.ecs_entity as Entity;
-      entity.addComponent(SelectedComponent);
-      const waterCycleBuilderSystem = this.world.getSystem(
-        WaterCycleBuilderSystem
-      ) as WaterCycleBuilderSystem;
-      waterCycleBuilderSystem.entitySelected(entity);
+      let entity = option.target.ecs_entity as Entity;
+      this.entitySelected.emit(entity);
     }
   }
 
-  private addPostfix(url: string, postfix: string): string {
-    const i = url.lastIndexOf('.');
-    return [url.slice(0, i), postfix, url.slice(i)].join('');
-  }
-
-  private getIconUrl(entityType: EntityType, purpose: Purpose = Purpose.Default): string {
-    if (purpose === Purpose.Default) {
-      return this.typeToIconUrl[entityType];
+  @bound
+  private selectionClearedHandler(option: any) {
+    let deselected = [] as fabric.Object[];
+    if (option.hasOwnProperty('deselected')) {
+      deselected = option.deselected;
+    } else if (option.hasOwnProperty('target')) {
+      deselected = [option.target];
     } else {
-      const url = this.typeToIconUrl[entityType];
-      return this.addPostfix(url, highlightPostfix);
+      console.log('Unknown option for selectionClearedHandler', option);
+      return;
     }
+
+    const entities = [] as Entity[];
+    for (let object of deselected) {
+      entities.push(object.ecs_entity);
+    }
+    this.entitiesUnselected.emit(entities);
   }
 
   added(entity: Entity) {
-    // Check if an entity has an identity and a corresponding representation
-    if (entity.hasComponent(TypeComponent)) {
-      const typeComponent = entity.getComponents(TypeComponent)[0] as TypeComponent;
-    }
-
     // Add an entities representation to the canvas
     if (entity.hasComponent(CanvasComponent)) {
       const canvasComponent = entity.getComponents(CanvasComponent)[0] as CanvasComponent;
@@ -147,30 +143,24 @@ export class CanvasSystem extends EntitySystem {
     }
   }
 
-  update(entity: Entity) {
-    const typeComponent = entity.getComponents(TypeComponent)[0] as TypeComponent;
-    if (typeComponent.isDirty) {
-      const canvasComponent = entity.getComponents(CanvasComponent)[0] as CanvasComponent;
-      const [left, top] = [canvasComponent.object.left, canvasComponent.object.top];
-      canvasComponent.object.set({ left: 0, top: 0 });
-      canvasComponent.object.setCoords();
-      const group = new fabric.Group(
-        [
-          canvasComponent.object,
-          new fabric.Rect({
-            width: canvasComponent.object.width,
-            height: canvasComponent.object.height,
-            strokeWidth: 0,
-            fill: 'white'
-          })
-        ],
-        { left, top }
-      );
-      group.item(1).set('opacity', 0.5);
-      this.canvas.add(group);
-      this.canvas.remove(canvasComponent.object);
-      canvasComponent.object = group;
+  removed(entity: Entity) {
+    if (entity.hasComponent(CanvasComponent)) {
+      entity
+        .getComponents(CanvasComponent)
+        .forEach((canvasComponent: CanvasComponent) => this.canvas.remove(canvasComponent.object));
+    }
+  }
 
+  update(entity: Entity) {
+    let typeComponent = entity.getComponents(TypeComponent)[0] as TypeComponent;
+    let canvasComponent = entity.getComponents(CanvasComponent)[0] as CanvasComponent;
+
+    if (typeComponent.isDirty) {
+      if (typeComponent.purpose !== Purpose.Default) {
+        canvasComponent.object.set('opacity', 0.5);
+      } else {
+        canvasComponent.object.set('opacity', 1);
+      }
       typeComponent.clearIsDirty();
     }
   }

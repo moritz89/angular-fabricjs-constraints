@@ -31,10 +31,24 @@ class MyScene extends Scene {
     this.canvas.renderAll();
 
     this.world.addManager(this.uiInterface);
-    this.world.addSystem(new CanvasSystem(this.canvas));
+    const canvasSystem = new CanvasSystem(this.canvas);
+    this.world.addSystem(canvasSystem);
+
     const waterCycleSimulationSystem = new WaterCycleSimulationSystem();
     this.world.addSystem(waterCycleSimulationSystem);
-    this.world.addSystem(new WaterCycleBuilderSystem(waterCycleSimulationSystem));
+
+    const waterCycleBuilderSystem = new WaterCycleBuilderSystem(
+      waterCycleSimulationSystem,
+      canvasSystem.redrawEntities
+    );
+    this.world.addSystem(waterCycleBuilderSystem);
+    canvasSystem.entitySelected.subscribe((entity: Entity) => {
+      waterCycleBuilderSystem.entitySelected(entity);
+    });
+    canvasSystem.entitiesUnselected.subscribe((entities: Entity[]) => {
+      waterCycleBuilderSystem.entityUnselected(entities);
+    });
+
     this.world.addEntity(MyScene.createPump());
   }
 }

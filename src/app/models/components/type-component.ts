@@ -1,6 +1,6 @@
 import { Component } from 'complex-engine';
 
-export const enum Purpose {
+export enum Purpose {
   Default,
   OpenSlot,
   Movement,

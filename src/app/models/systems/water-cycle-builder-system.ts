@@ -1,18 +1,29 @@
 import { EntitySystem, Entity } from 'complex-engine';
-import { EventEmitter } from '@angular/core';
+import { takeUntil } from 'rxjs/operators';
 
 import { WaterCycleComponent } from '../components/water-cycle-component';
 import { SelectedComponent } from '../components/selected-component';
 import { WaterCycleSimulationSystem } from './water-cycle-simulation-system';
 import { TypeComponent, Purpose } from '../components/type-component';
+import { EventsService } from '../events.service';
 
 export class WaterCycleBuilderSystem extends EntitySystem {
   constructor(
     private waterCycleSimulationSystem: WaterCycleSimulationSystem,
-    private redrawEntities: EventEmitter<Entity[]>
+    private eventsService: EventsService
   ) {
     super();
     this.components = [WaterCycleComponent, TypeComponent, SelectedComponent];
+    this.eventsService.entitySelected$
+      .pipe(takeUntil(this.eventsService.destroy$))
+      .subscribe((entity: Entity) => {
+        this.entitySelected(entity);
+      });
+    this.eventsService.entitiesUnselected$
+      .pipe(takeUntil(this.eventsService.destroy$))
+      .subscribe((entities: Entity[]) => {
+        this.entityUnselected(entities);
+      });
   }
 
   removed(entity: Entity) {
@@ -28,7 +39,9 @@ export class WaterCycleBuilderSystem extends EntitySystem {
         typeComponent.purpose = Purpose.ActiveFamily;
       }
     }
-    this.redrawEntities.emit(Array.from(this.waterCycleSimulationSystem.waterCycleEntities));
+    this.eventsService.redrawEntities$.emit(
+      Array.from(this.waterCycleSimulationSystem.waterCycleEntities)
+    );
   }
 
   entityUnselected(entities: Entity[]) {
@@ -38,7 +51,9 @@ export class WaterCycleBuilderSystem extends EntitySystem {
         typeComponent.purpose = Purpose.Default;
       }
     }
-    this.redrawEntities.emit(Array.from(this.waterCycleSimulationSystem.waterCycleEntities));
+    this.eventsService.redrawEntities$.emit(
+      Array.from(this.waterCycleSimulationSystem.waterCycleEntities)
+    );
   }
 
   update(entity: Entity) {}

@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Scene, Entity, Complex, Manager, EntitySystem } from 'complex-engine';
 
 import { CanvasComponent } from '../models/components/canvas-component';
@@ -8,11 +8,12 @@ import { CanvasSystem } from '../models/systems/canvas-system';
 import { WaterCycleSimulationSystem } from '../models/systems/water-cycle-simulation-system';
 import { WaterCycleBuilderSystem } from '../models/systems/water-cycle-builder-system';
 import { TypeComponent, EntityType } from '../models/components/type-component';
+import { EventsService } from '../models/events.service';
 
 class MyScene extends Scene {
   public canvas: fabric.Canvas;
 
-  constructor(private uiInterface: UiInterface) {
+  constructor(private uiInterface: UiInterface, private eventsService: EventsService) {
     super('MainScene');
   }
 
@@ -31,7 +32,7 @@ class MyScene extends Scene {
     this.canvas.renderAll();
 
     this.world.addManager(this.uiInterface);
-    const canvasSystem = new CanvasSystem(this.canvas);
+    const canvasSystem = new CanvasSystem(this.canvas, this.eventsService);
     this.world.addSystem(canvasSystem);
 
     const waterCycleSimulationSystem = new WaterCycleSimulationSystem();
@@ -39,16 +40,9 @@ class MyScene extends Scene {
 
     const waterCycleBuilderSystem = new WaterCycleBuilderSystem(
       waterCycleSimulationSystem,
-      canvasSystem.redrawEntities
+      this.eventsService
     );
     this.world.addSystem(waterCycleBuilderSystem);
-    canvasSystem.entitySelected.subscribe((entity: Entity) => {
-      waterCycleBuilderSystem.entitySelected(entity);
-    });
-    canvasSystem.entitiesUnselected.subscribe((entities: Entity[]) => {
-      waterCycleBuilderSystem.entityUnselected(entities);
-    });
-
     this.world.addEntity(MyScene.createPump());
   }
 }
@@ -73,16 +67,22 @@ class UiInterface extends Manager {
   templateUrl: './ecs-test.component.html',
   styleUrls: ['./ecs-test.component.css']
 })
-export class EcsTestComponent implements OnInit {
-  private uiInterface: UiInterface = new UiInterface();
-  private myScene: MyScene = new MyScene(this.uiInterface);
+export class EcsTestComponent implements OnInit, OnDestroy {
+  private uiInterface: UiInterface;
+  private myScene: MyScene;
   private complex: Complex;
 
-  constructor() {}
+  constructor(private eventsService: EventsService) {}
 
   ngOnInit() {
+    this.uiInterface = new UiInterface();
+    this.myScene = new MyScene(this.uiInterface, this.eventsService);
     this.complex = Complex.getInstance();
     this.complex.loadScene(this.myScene);
+  }
+
+  ngOnDestroy() {
+    this.eventsService.destroy$.next(true);
   }
 
   create() {

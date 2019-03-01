@@ -1,14 +1,15 @@
 import { Entity, EntitySystem } from 'complex-engine';
 import { fabric } from 'fabric';
-import { Output, EventEmitter } from '@angular/core';
+import { takeUntil } from 'rxjs/operators';
 
 import { bound } from '../../utils/bound';
 import { CanvasComponent } from '../components/canvas-component';
 import { Purpose, TypeComponent } from '../components/type-component';
 import '../../utils/fabric-ecs';
+import { EventsService } from '../events.service';
 
 export class CanvasSystem extends EntitySystem {
-  constructor(private canvas: fabric.Canvas) {
+  constructor(private canvas: fabric.Canvas, private eventsService: EventsService) {
     super();
     this.components = [CanvasComponent];
 
@@ -19,17 +20,13 @@ export class CanvasSystem extends EntitySystem {
       'selection:cleared': this.selectionClearedHandler
     });
 
-    this.redrawEntities.subscribe((entities: Entity[]) =>
-      entities.forEach(entity => this.update(entity))
-    );
+    eventsService.redrawEntities$
+      .pipe(takeUntil(this.eventsService.destroy$))
+      .subscribe((entities: Entity[]) => entities.forEach(entity => this.update(entity)));
   }
 
   private gridSpacingX: number = 50;
   private gridSpacingY: number = 50;
-
-  @Output() entitySelected: EventEmitter<Entity> = new EventEmitter();
-  @Output() entitiesUnselected: EventEmitter<Entity[]> = new EventEmitter();
-  @Output() redrawEntities: EventEmitter<Entity[]> = new EventEmitter();
 
   @bound
   private snapObjectHandler(options: any) {
@@ -100,7 +97,7 @@ export class CanvasSystem extends EntitySystem {
       });
     } else if (option.hasOwnProperty('target')) {
       let entity = option.target.ecs_entity as Entity;
-      this.entitySelected.emit(entity);
+      this.eventsService.entitySelected$.emit(entity);
     }
   }
 
@@ -120,7 +117,7 @@ export class CanvasSystem extends EntitySystem {
     for (let object of deselected) {
       entities.push(object.ecs_entity);
     }
-    this.entitiesUnselected.emit(entities);
+    this.eventsService.entitiesUnselected$.emit(entities);
   }
 
   added(entity: Entity) {
